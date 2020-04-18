@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.datasets import make_blobs
 
 # Hyperparameters
-lambd = 0.001
+lambd = 0.1
 T = 500000  # max_epochs
 
 
@@ -35,7 +35,7 @@ def train(X, y):
         eta = eta / 10 if eta > 0.00001 else eta
 
         if t % (T / 10) == 0:
-            print('#Epoch: {}'.format(t))
+            print('#Epoch: {}/{}'.format(t, T))
 
     # Return the weight vector of the final epoch
     return w
