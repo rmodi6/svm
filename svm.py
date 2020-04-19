@@ -68,6 +68,8 @@ def draw(w, X, y):
     # plot decision boundary and margins
     ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
                linestyles=['--', '-', '--'])
+    ax.scatter(X[[25, 67], 1], X[[25, 67], 2], s=100,
+               linewidth=1, facecolors='none', edgecolors='k')
     plt.show()
 
 
