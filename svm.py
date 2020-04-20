@@ -3,14 +3,14 @@ import numpy as np
 from sklearn.datasets import make_blobs
 
 # Hyperparameters
-lambd = 0.1
-T = 500000  # max_epochs
+C = 10  # regularization strength
+T = 600000  # max_epochs
 
 
 def train(X, y):
-    max_fval = np.max(X)  # Maximum feature value
-    eta = 0.001 * max_fval  # Initial learning rate
+    eta = 0.0001  # Learning rate
     w = np.zeros(X.shape[1])  # Weight vector
+    b = 0  # Bias
 
     # For each epoch
     for t in range(1, T + 1):
@@ -20,38 +20,35 @@ def train(X, y):
         X_i, y_i = X[i], y[i]
 
         # Compute hinge loss
-        v = 1 - (y_i * np.dot(X_i, w))
+        v = 1 - (y_i * (np.dot(X_i, w) + b))
 
-        # Compute the partial gradient
+        # Compute the partial gradients
         if v <= 0:
-            dw = lambd * w
+            dw = w
+            db = 0
         else:
-            dw = lambd * w - y_i * X_i
+            dw = w - C * y_i * X_i
+            db = -C * y_i
 
-        # Update the weight vector
+        # Update the weight vector and bias
         w = w - eta * dw
-
-        # Reduce the learning rate but don't reduce it too much
-        eta = eta / 10 if eta > 0.00001 else eta
+        b = b - eta * db
 
         if t % (T / 10) == 0:
             print('#Epoch: {}/{}'.format(t, T))
 
     # Return the weight vector of the final epoch
-    return w
+    return w, b
 
 
-def decision_function(w, X):
-    # Add one to the X values to incorporate bias
-    if len(w) == len(X[0]) + 1:
-        X = np.c_[np.ones((X.shape[0])), X]
+def decision_function(w, b, X):
     # Compute the output of the svm weight vector
-    return np.dot(X, w)
+    return np.dot(X, w) + b
 
 
-def draw(w, X, y):
+def draw(w, b, X, y):
     # Plot the features
-    plt.scatter(X[:, 1], X[:, 2], c=y, s=30, cmap=plt.cm.Paired)
+    plt.scatter(X[:, 0], X[:, 1], c=y, s=30, cmap=plt.cm.Accent)
 
     # plot the decision function
     ax = plt.gca()
@@ -63,19 +60,17 @@ def draw(w, X, y):
     yy = np.linspace(ylim[0], ylim[1], 30)
     YY, XX = np.meshgrid(yy, xx)
     xy = np.vstack([XX.ravel(), YY.ravel()]).T
-    Z = decision_function(w, xy).reshape(XX.shape)
+    Z = decision_function(w, b, xy).reshape(XX.shape)
 
     # plot decision boundary and margins
     ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
                linestyles=['--', '-', '--'])
-    ax.scatter(X[[25, 67], 1], X[[25, 67], 2], s=100,
-               linewidth=1, facecolors='none', edgecolors='k')
     plt.show()
 
 
-def test(w, X, y):
+def test(w, b, X, y):
     # Compute the number of misclassified points
-    error = np.sum(np.where(y != np.sign(decision_function(w, X)), 1, 0))
+    error = np.sum(np.where(y != np.sign(decision_function(w, b, X)), 1, 0))
     print('Total number of test data points: {}'.format(len(X)))
     print('Number of misclassified points: {}'.format(error))
 
@@ -84,14 +79,12 @@ if __name__ == '__main__':
     # Generate sample data
     features, labels = make_blobs(n_samples=100, n_features=2, centers=2, cluster_std=1.05, random_state=10)
 
-    # Add one to the feature values to incorporate bias
-    features = np.c_[np.ones((features.shape[0])), features]
     # Change labels from (0,1) -> (-1,1)
     labels = np.where(labels == 1, 1, -1)
 
     # Train Test Split
     X_train, X_test, y_train, y_test = features[:80], features[-20:], labels[:80], labels[-20:]
 
-    weights = train(X_train, y_train)
-    draw(weights, X_train, y_train)
-    test(weights, X_test, y_test)
+    weights, bias = train(X_train, y_train)
+    draw(weights, bias, X_train, y_train)
+    test(weights, bias, X_test, y_test)
